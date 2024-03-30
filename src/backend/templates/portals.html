@@ -1,0 +1,8 @@
+<div id="portals" class="scrollable" hx-swap-oob="outerHTML:#portals">
+  <h1>Portals ({{ current }})</h1>
+  <ul>
+    {% for portal in portals %}
+      <li>{{ portal }}</li>
+    {% endfor %}
+  </ul>
+</div>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="{{ url_for('static', path = 'styles/styles.css') }}" />
+    <script src="{{ url_for('static', path = 'scripts/terminal.js') }}" defer></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
+  </head>
+
+  <body hx-ext="ws" ws-connect="/ws/{{ user_id }}">
+    <main>
+      <div id="terminal">
+        <div id="history" class="scrollable">
+          <div id="innerHistory"></div>
+        </div>
+        <div id="prompt">
+          <span id="PS1">$</span>
+          <pre id="prompt-input"></pre>
+          <span class="cursor"></span>
+          <form ws-send hx-trigger="send_cmd from:body" hx-swap="none">
+            <input id="hidden-cmd" type="hidden" name="cmd" />
+          </form>
+        </div>
+      </div>
+    </main>
+    <aside>
+      <div id="portals" class="scrollable">
+        <h1>In no portal</h1>
+      </div>
+      <div id="users" class="scrollable"></div>
+    </aside>
+  </body>
+</html>
