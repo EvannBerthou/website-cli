@@ -8,10 +8,9 @@ class ConnectionManager:
     def __init__(self):
         self.active_connections: dict[WebSocket, User] = {}
 
-    async def connect(self, websocket: WebSocket, user_id: int):
+    async def connect(self, websocket: WebSocket, user: int):
         await websocket.accept()
-        self.active_connections[websocket] = User(
-            ws=websocket, username=f'User {user_id}')
+        self.active_connections[websocket] = User(ws=websocket, username=user)
 
     def disconnect(self, websocket: WebSocket):
         self.active_connections.pop(websocket, None)
@@ -50,5 +49,5 @@ class ConnectionManager:
                        'current': self.get_user(ws).username}
             await self.send_template(ws, 'users.html', context)
 
-    def get_user(self, websocket: WebSocket):
+    def get_user(self, websocket: WebSocket) -> User:
         return self.active_connections[websocket]

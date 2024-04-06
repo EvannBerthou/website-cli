@@ -1,3 +1,16 @@
 <div hx-swap-oob="beforeend:#innerHistory">
-  <p>{{ prefix }}{{ user }} : {{ chat[1:] }}</p>
+  <div>
+    {% set lines = chat.split('\n') %}
+    <p>
+      {% if prefix %} {{ prefix }} {% endif %}
+      {% if user %} {{ user }} {% endif %}
+      {% if suffix %} {{ suffix }} {% endif %}
+      {% if user %} : {% endif %}
+      {{lines[0]}}
+    </p>
+
+    {% for line in lines[1:] %}
+    <p>{{ line }} </p>
+    {% endfor %}
+  </div>
 </div>

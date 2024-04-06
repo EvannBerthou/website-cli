@@ -23,8 +23,7 @@ class Commands:
             if len(params) > len(args):
                 return await self.get_usage(cmd_name, params)
             return await cmd_fct(websocket, *args)
-        except AttributeError as e:
-            print(str(e))
+        except AttributeError:
             return f'Unknown command : {cmd_name}'
         except ValidationError:
             return await self.get_usage(cmd_name, params)
