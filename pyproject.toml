@@ -13,14 +13,25 @@ dependencies = [
     "websockets>=12.0",
     "pydantic-settings>=2.2.1",
     "fastapi-login>=1.10.0",
+    "sqlalchemy>=2.0.29",
+    "psycopg2-binary>=2.9.9",
+    "bcrypt>=4.1.2",
 ]
 requires-python = "==3.12.*"
 readme = "README.md"
 license = {text = "MIT"}
 
+[tool.pdm.dev-dependencies]
+dev = [
+    "ruff>=0.3.7",
+    "mypy>=1.9.0",
+]
 
 [tool.pdm]
 distribution = false
 
 [tool.pdm.scripts]
 start = "uvicorn src.backend.main:app --reload"
+lint = { composite = ["ruff", "mypy"]}
+ruff = "ruff check src/"
+mypy = "mypy ."

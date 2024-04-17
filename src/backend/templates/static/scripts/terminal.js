@@ -1,9 +1,21 @@
+const commandHistory = []
 let promptText = ""
+let commandPointer = 0
 
 const body = document.querySelector('body')
 
 document.onkeydown = (input) => {
     switch (input.key) {
+        case 'ArrowUp':
+            if (!commandHistory.length) break
+            commandPointer = Math.max(0, commandPointer - 1)
+            promptText = commandHistory[commandPointer];
+            break
+        case 'ArrowDown':
+            if (!commandHistory.length) break
+            commandPointer = Math.min(commandPointer + 1, commandHistory.length)
+            promptText = commandHistory[commandPointer] || ''
+            break
         case 'Backspace':
             promptText = promptText.slice(0, promptText.length - 1)
             break
@@ -15,6 +27,8 @@ document.onkeydown = (input) => {
                 } else {
                     const sendEvent = new Event("send_cmd")
                     body.dispatchEvent(sendEvent)
+                    commandHistory.push(promptText)
+                    commandPointer = commandHistory.length
                 }
             }
             promptText = ''

@@ -5,10 +5,10 @@ from .templating import render_template
 
 
 class ConnectionManager:
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: dict[WebSocket, User] = {}
 
-    async def connect(self, websocket: WebSocket, user: int):
+    async def connect(self, websocket: WebSocket, user: str):
         await websocket.accept()
         self.active_connections[websocket] = User(ws=websocket, username=user)
 
