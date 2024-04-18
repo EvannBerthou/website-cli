@@ -8,18 +8,13 @@ from fastapi import (
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi_login import LoginManager
 
-from .connectionManager import ConnectionManager
 from .commands import Commands
-from .config import settings
+from .models.user import user_exists, create_user, user_valid
+from .connectionManager import ConnectionManager
+from .login import login_manager
 
 app = FastAPI()
-assert settings.login_key, "Please provide a Login Secret Key."
-login_manager = LoginManager(settings.login_key, "/login", use_cookie=True)
-
-# TODO: Déplacer
-from .models.user import user_exists, create_user, user_valid
 
 templates = Jinja2Templates(directory="src/backend/templates")
 app.mount(
@@ -51,17 +46,16 @@ async def login(request: Request, cmd: Annotated[str, Form()]):
         case _:
             return chat_response(request, "Commande invalide")
 
-    context = {"request": request, "username": username}
     token = login_manager.create_access_token(data={"sub": username})
+    context = {"request": request, "token": token}
     resp = templates.TemplateResponse("cli.html", context)
     login_manager.set_cookie(resp, token)
     return resp
 
 
-@app.websocket("/ws/{user}")
-async def websocket_endpoint(websocket: WebSocket, user: str):
-    # TODO: Vérifier que le token est valide et récupérer le User
-    await manager.connect(websocket, user)
+@app.websocket("/ws/{token}")
+async def websocket_endpoint(websocket: WebSocket, token: str):
+    user = await manager.verify_token(websocket, token)
     assert websocket.client is not None
     client_id = websocket.client.host
     await manager.refresh_users()

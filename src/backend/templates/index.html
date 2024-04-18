@@ -4,8 +4,8 @@
 <head>
   <link rel="stylesheet" href="{{ url_for('static', path = 'styles/styles.css') }}" />
   <script src="{{ url_for('static', path = 'scripts/terminal.js') }}" defer></script>
-  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-  <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
+  <script src="{{ url_for('static', path = 'scripts/htmx.js') }}" defer></script>
+  <script src="{{ url_for('static', path = 'scripts/htmx-ws.js') }}" defer></script>
 </head>
 
 <body>

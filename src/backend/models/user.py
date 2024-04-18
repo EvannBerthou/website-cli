@@ -1,7 +1,7 @@
 import bcrypt
 from sqlalchemy import Column, Integer, String, insert
 from .db import Base, SessionLocal
-from ..main import login_manager
+from ..login import login_manager
 
 
 class User(Base):
@@ -15,9 +15,12 @@ class User(Base):
 # TODO: Au lieu de renvoyer un objet Schéma de la base, il faudrait passer par un Objet Pydantic
 
 
-@login_manager.user_loader()
 def get_user(username: str):
     return SessionLocal().query(User).where(User.username == username).first()
+
+
+# Problème avec mypy qui pense que ça retourne un Awaitable alors que non
+login_manager.user_loader()(get_user)
 
 
 def user_valid(username: str, password: str):

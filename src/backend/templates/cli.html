@@ -1,4 +1,4 @@
-<div hx-ext="ws" ws-connect="/ws/{{ username }}" hx-swap-oob="outerHTML:#login-form">
+<div id="ws-conn" hx-ext="ws" ws-connect="/ws/{{ token }}" hx-swap-oob="outerHTML:#login-form">
   <form ws-send hx-trigger="send_cmd from:body" hx-swap="none">
     <input id="hidden-cmd" type="hidden" name="cmd" />
   </form>
