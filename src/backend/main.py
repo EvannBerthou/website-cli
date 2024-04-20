@@ -9,6 +9,8 @@ from fastapi import (
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from .deps import SessionDep
+
 from .commands import Commands
 from .models.user import user_exists, create_user, user_valid
 from .connectionManager import ConnectionManager
@@ -32,17 +34,17 @@ async def index(request: Request):
 
 
 @app.post("/login")
-async def login(request: Request, cmd: Annotated[str, Form()]):
+async def login(request: Request, cmd: Annotated[str, Form()], db: SessionDep):
     match cmd.split():
         case ["login", username, password]:
-            if not user_valid(username, password):
+            if not user_valid(db, username, password):
                 return chat_response(request, "Utilisateur ou mot de passe invalide")
         case ["register", username, password, confirm]:
             if password != confirm:
                 return chat_response(request, "Mots de passes différents")
-            if user_exists(username):
+            if user_exists(db, username):
                 return chat_response(request, "L'utilisateur existe déjà")
-            create_user(username, password)
+            create_user(db, username, password)
         case _:
             return chat_response(request, "Commande invalide")
 

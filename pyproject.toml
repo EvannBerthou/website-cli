@@ -16,6 +16,7 @@ dependencies = [
     "sqlalchemy>=2.0.29",
     "psycopg2-binary>=2.9.9",
     "bcrypt>=4.1.2",
+    "sqlmodel>=0.0.16",
 ]
 requires-python = "==3.12.*"
 readme = "README.md"
