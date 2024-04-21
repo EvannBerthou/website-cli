@@ -1,10 +1,42 @@
+const loadingTexts = [
+    {text: "bonjour", timing: 1000},
+    {text: "je suis un test", timing: 2000},
+    {text: "un peu après", timing: 3000},
+    {text: "log linux", timing: 3100},
+    {text: "log linux", timing: 3100},
+    {text: "log linux", timing: 3100},
+    {text: "log linux", timing: 3100},
+    {text: "Initialisation", timing: 5000},
+    {text: "test", timing: 5000},
+]
+
 const commandHistory = []
 let promptText = ""
 let commandPointer = 0
+let loaded = false
 
 const body = document.querySelector('body')
+const innerHistory = document.querySelector('#innerHistory')
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+loadingTexts.forEach(async ({text, timing}, idx) => {
+    await sleep(timing)
+    const p = document.createElement('div')
+    p.innerText = text;
+    innerHistory.appendChild(p);
+    if (idx == loadingTexts.length - 1) {
+        loaded = true
+        const sendEvent = new Event("load_motd")
+        body.dispatchEvent(sendEvent)
+    }
+})
 
 document.onkeydown = (input) => {
+    if (!loaded) return;
+
     switch (input.key) {
         case 'ArrowUp':
             if (!commandHistory.length) break
@@ -53,7 +85,6 @@ document.onkeydown = (input) => {
     hiddenCMD.value = promptText
 }
 
-const innerHistory = document.querySelector('#innerHistory')
 function handle_local_commands() {
     switch (promptText.trim()) {
         case 'clear':

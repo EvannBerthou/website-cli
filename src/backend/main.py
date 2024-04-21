@@ -33,6 +33,12 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html", context)
 
 
+@app.get("/motd")
+async def motd(request: Request):
+    context = {"request": request}
+    return templates.TemplateResponse("motd.html", context)
+
+
 @app.post("/login")
 async def login(request: Request, cmd: Annotated[str, Form()], db: SessionDep):
     match cmd.split():

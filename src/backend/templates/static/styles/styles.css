@@ -15,6 +15,7 @@
     font-size: 22px;
     color: #13A10E;
     font-family: 'clacon2';
+    font-weight: 700;
 }
 
 body {
@@ -52,7 +53,7 @@ main #terminal #prompt {
 }
 
 main #terminal #prompt #PS1 {
-    margin-right: 10px;
+    margin: 5px 10px 5px 5px;
 }
 
 @keyframes cursor-blink {

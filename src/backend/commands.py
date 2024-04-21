@@ -59,7 +59,10 @@ class Commands:
             fct_names = ", ".join(x[0][4:] for x in all_fct if x[0].startswith("cmd_"))
             return f"Type `help <command name>` for more details.\n{fct_names}"
 
-        cmd_fct = getattr(self, f"cmd_{cmd_name}")
+        try:
+            cmd_fct = getattr(self, f"cmd_{cmd_name}")
+        except AttributeError:
+            return f"Unknown command : {cmd_name}"
         params = await self.get_method_params(cmd_fct)
         return await self.get_usage(cmd_name, params)
 

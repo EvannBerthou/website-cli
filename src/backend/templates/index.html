@@ -13,17 +13,8 @@
     <div id="terminal">
       <div id="history" class="scrollable">
         <div id="innerHistory">
-          <div>
-            <p>Bienvenue sur le serveur !!</p>
-            <p>
-              Connectez vous en tapant: 
-              login &lt;username&gt; &lt;mot de passe&gt;
-            </p>
-            <p>
-              Créez un compte en tapant: register &lt;username&gt;
-              &lt;mot de passe&gt; &lt;confirmation&gt;
-            </p>
-          </div>
+            <div hx-get="/motd" hx-trigger="load_motd from:body" 
+                hx-swap="beforeend" hx-target="#innerHistory"> </div>
         </div>
       </div>
       <div id="prompt">
