@@ -1,6 +1,13 @@
 <span hx-swap-oob="beforeend:#innerHistory">
-  <p>$ {{ cmd }}</p>
-  {% if response != '' %}
-    <pre>{{ response }}</pre>
-  {% endif %}
+    <p>[{{old_working_dir}}]$ {{ cmd }}</p>
+    {% if response %}
+      <pre>{{ response }}</pre>
+    {% endif %}
+</span>
+
+<input hx-swap-oob="outerHTML:#working-dir" id="working-dir" 
+    type="hidden" name="working-dir" value="{{working_dir}}">
+
+<span hx-swap-oob="outerHTML:#PS1" id="PS1">
+    [{{working_dir }}]$
 </span>

@@ -10,9 +10,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from .deps import SessionDep
-
 from .commands import Commands
 from .models.user import user_exists, create_user, user_valid
+from .models.command import Command, build_command, MsgType
 from .connectionManager import ConnectionManager
 from .login import login_manager
 
@@ -72,14 +72,14 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         await manager.send_template(websocket, "chat.html", motd)
         while True:
             data = await websocket.receive_json()
-            msg: str = data.get("cmd", "").strip()
-            match msg[0]:
-                case "@":
-                    await handle_global_msg(websocket, msg)
-                case "#":
-                    await handle_portal_msg(websocket, msg)
-                case _:
-                    await handle_command(websocket, msg)
+            command = build_command(data)
+            match command.msg_type:
+                case MsgType.Global:
+                    await handle_global_msg(websocket, command.cmd)
+                case MsgType.Portal:
+                    await handle_portal_msg(websocket, command.cmd)
+                case MsgType.Command:
+                    await handle_command(websocket, command)
     except WebSocketDisconnect:
         print(f"Disconnect: {client_id}")
         manager.disconnect(websocket)
@@ -111,10 +111,19 @@ async def handle_portal_msg(websocket: WebSocket, msg: str) -> None:
         await manager.send_template_portal("chat.html", user.portal, context)
 
 
-async def handle_command(websocket: WebSocket, cmd: str) -> None:
-    response = await commands.handle_cmd(websocket, cmd) or ""
-    context = {"cmd": cmd, "response": response}
-    await manager.send_template(websocket, "cmd.html", context)
+async def handle_command(websocket: WebSocket, command: Command) -> None:
+    response = await commands.handle_cmd(websocket, command)
+    if not response:
+        return
+
+    working_dir = response.working_dir or command.working_dir
+    context = {
+        "cmd": command.full,
+        "response": response.text_response,
+        "old_working_dir": command.working_dir,
+        "working_dir": working_dir,
+    }
+    await manager.send_template(websocket, 'cmd.html', context)
 
 
 def chat_response(request: Request, msg: str):

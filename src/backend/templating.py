@@ -6,5 +6,5 @@ env = jinja2.Environment(
 )
 
 
-def render_template(template_name: str, context: dict):
+def render_template(template_name: str, context: dict) -> str:
     return env.get_template(template_name).render(**context)
