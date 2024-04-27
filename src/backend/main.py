@@ -75,9 +75,9 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
             command = build_command(data)
             match command.msg_type:
                 case MsgType.Global:
-                    await handle_global_msg(websocket, command.cmd)
+                    await handle_global_msg(websocket, command.full)
                 case MsgType.Portal:
-                    await handle_portal_msg(websocket, command.cmd)
+                    await handle_portal_msg(websocket, command.full)
                 case MsgType.Command:
                     await handle_command(websocket, command)
     except WebSocketDisconnect:
