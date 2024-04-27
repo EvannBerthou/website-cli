@@ -1,13 +1,6 @@
 const loadingTexts = [
-    {text: "bonjour", timing: 1000},
-    {text: "je suis un test", timing: 2000},
-    {text: "un peu après", timing: 3000},
-    {text: "log linux", timing: 3100},
-    {text: "log linux", timing: 3100},
-    {text: "log linux", timing: 3100},
-    {text: "log linux", timing: 3100},
-    {text: "Initialisation", timing: 5000},
-    {text: "test", timing: 5000},
+    {text: "Faire '@message' pour envoyer un message global", timing: 0},
+    {text: "Faire '#message' pour envoyer un message dans le portal", timing: 0},
 ]
 
 const commandHistory = []
