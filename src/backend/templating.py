@@ -2,7 +2,9 @@ import jinja2
 
 env = jinja2.Environment(
     loader=jinja2.PackageLoader("src.backend"),
-    autoescape=jinja2.select_autoescape()
+    autoescape=jinja2.select_autoescape(),
+    trim_blocks=True,
+    lstrip_blocks=True
 )
 
 
