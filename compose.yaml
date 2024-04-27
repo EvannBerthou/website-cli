@@ -1,0 +1,30 @@
+services:
+  web:
+    image: ghcr.io/evannberthou/website_cli:latest
+    ports:
+      - "8000:80"
+    environment:
+      - DB_URL=postgresql://user:user@postgres:5432/website_cli
+      - LOGIN_KEY=test
+
+  postgres:
+    image: postgres
+    ports:
+      - 9877:5432
+    volumes:
+      - postgres-vol:/var/lib/postgresql/data:Z
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=user
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - 9876:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=user@user.com
+      - PGADMIN_DEFAULT_PASSWORD=user
+
+volumes:
+  postgres-vol:
+    external: true
