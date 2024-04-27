@@ -9,7 +9,7 @@ let commandPointer = 0
 let loaded = false
 
 const body = document.querySelector('body')
-const innerHistory = document.querySelector('#innerHistory')
+const innerHistory = document.querySelector('#inner-history')
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));

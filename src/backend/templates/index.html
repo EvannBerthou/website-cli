@@ -3,18 +3,18 @@
 
 <head>
   <link rel="stylesheet" href="{{ url_for('static', path = 'styles/styles.css') }}" />
+  <script src="{{ url_for('static', path = 'scripts/htmx.js') }}"></script>
+  <script src="{{ url_for('static', path = 'scripts/htmx-ws.js') }}"></script>
   <script src="{{ url_for('static', path = 'scripts/terminal.js') }}" defer></script>
-  <script src="{{ url_for('static', path = 'scripts/htmx.js') }}" defer></script>
-  <script src="{{ url_for('static', path = 'scripts/htmx-ws.js') }}" defer></script>
 </head>
 
 <body>
   <main>
     <div id="terminal">
       <div id="history" class="scrollable">
-        <div id="innerHistory">
+        <div id="inner-history">
             <div hx-get="/motd" hx-trigger="load_motd from:body" 
-                hx-swap="beforeend" hx-target="#innerHistory"> </div>
+                hx-swap="beforeend" hx-target="#inner-history"> </div>
         </div>
       </div>
       <div id="prompt">
