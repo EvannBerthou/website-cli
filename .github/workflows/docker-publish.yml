@@ -46,5 +46,4 @@ jobs:
           docker push $IMAGE_ID:$VERSION
 
       - name: Redeploy image
-        run: curl -X POST "${{secrets.DEPLOY_URL}}"
-
+        run: curl --insecure -X POST "${{secrets.DEPLOY_URL}}"
