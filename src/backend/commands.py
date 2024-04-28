@@ -78,10 +78,25 @@ class Commands:
         self.manager.active_connections[websocket].portal = portal_name
         context = {"portals": [], "current": portal_name}
         await self.manager.send_template(websocket, "portals.html", context)
-        await self.manager.refresh_users()
+        await self.manager.refresh_users()  # TODO: Refresh portals
         return CommandResult(f"Portal changed to {portal_name}")
 
     @validate_call(config=pydantic_config)
     async def cmd_cd(self, _: WebSocket, target_dir: str, wd: str) -> CommandResult:
         new_dir = f"{wd}{target_dir}/"
         return CommandResult(working_dir=new_dir)
+
+    @validate_call(config=pydantic_config)
+    async def cmd_msg(self, ws: WebSocket, *args) -> CommandResult:
+        target_name = args[0]
+        target_ws = self.manager.get_ws(target_name)
+        sender = self.manager.get_user(ws).username
+        if sender == target_name:
+            return CommandResult("Cannot send message to yourself")
+        if not target_ws:
+            return CommandResult(f"User {target_name} not found")
+        msg = "".join(args[2:])
+        await self.manager.send_template(
+            target_ws, "chat.html", {"prefix": "<- ", "user": sender, "chat": msg}
+        )
+        return CommandResult(f"-> {target_name} : {msg}")

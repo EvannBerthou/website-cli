@@ -62,3 +62,9 @@ class ConnectionManager:
 
     def get_user(self, websocket: WebSocket) -> User:
         return self.active_connections[websocket]
+
+    def get_ws(self, username: str) -> WebSocket | None:
+        for user in self.active_connections.values():
+            if user.username == username:
+                return user.ws
+        return None

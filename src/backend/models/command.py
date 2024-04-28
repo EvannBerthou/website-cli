@@ -1,3 +1,4 @@
+import re
 from typing import Any
 from enum import Enum
 from dataclasses import dataclass
@@ -19,6 +20,7 @@ class Command(BaseModel):
 
 
 command_needing_working_dir = ["cd"]
+command_keep_args_spacing = ["msg"]
 
 
 def build_command(data: Any) -> Command:
@@ -28,6 +30,9 @@ def build_command(data: Any) -> Command:
 
     if cmd in command_needing_working_dir:
         args.append(working_dir)
+
+    if cmd in command_keep_args_spacing:
+        args = re.split(r'(\s+)', msg)[2:]
 
     match cmd[0]:
         case "@":
