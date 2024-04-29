@@ -1,3 +1,4 @@
+import os
 from argparse import Namespace, ArgumentError, ArgumentParser, HelpFormatter
 from typing import Optional, Callable
 from dataclasses import dataclass
@@ -110,9 +111,13 @@ async def clear(*_) -> None:
     params=[arg("directory", type=str, nargs=1)],
     help="cd <target_dir>",
 )
-async def cd(_: WebSocket, args: Namespace) -> CommandResult:
+async def cd(ws: WebSocket, args: Namespace) -> CommandResult:
+    user = Commands.manager.get_user(ws)
+    user_path = user.working_dir
     target_dir = args.directory[0]
-    return CommandResult(working_dir=target_dir)
+    new_dir = os.path.normpath(os.path.join(user_path, target_dir))
+    user.working_dir = new_dir
+    return CommandResult(working_dir=new_dir)
 
 
 @command(

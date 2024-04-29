@@ -70,6 +70,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
     try:
         motd = {"chat": f"Vous êtes connectés avec le user : {user}"}
         await manager.send_template(websocket, "chat.html", motd)
+        await manager.send_template(websocket, "cmd.html", {"working_dir": "/"})
         while True:
             data = await websocket.receive_json()
             command = build_command(data)
@@ -112,18 +113,20 @@ async def handle_portal_msg(websocket: WebSocket, msg: str) -> None:
 
 
 async def handle_command(websocket: WebSocket, command: Command) -> None:
+    old_working_path = manager.get_user(websocket).working_dir
+    context = {"cmd": command.full, "old_working_dir": old_working_path}
+    await manager.send_template(websocket, "cmd_log.html", context)
+
     response = await commands.handle_cmd(websocket, command)
     if not response:
         return
 
-    working_dir = response.working_dir or command.working_dir
+    working_dir = response.working_dir or old_working_path
     context = {
-        "cmd": command.full,
         "response": response.text_response,
-        "old_working_dir": command.working_dir,
         "working_dir": working_dir,
     }
-    await manager.send_template(websocket, 'cmd.html', context)
+    await manager.send_template(websocket, "cmd.html", context)
 
 
 def chat_response(request: Request, msg: str):

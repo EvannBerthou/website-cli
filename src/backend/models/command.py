@@ -16,20 +16,13 @@ class Command(BaseModel):
     cmd: str
     args: list[str] = []
     msg_type: MsgType
-    working_dir: str
-
-
-command_needing_working_dir = ["cd"]
-command_keep_args_spacing = ["msg"]
 
 
 def build_command(data: Any) -> Command:
     msg = data.get("cmd", "")
-    working_dir = data.get("working-dir", "")
-    cmd, *args = msg.split()
-
-    if cmd in command_keep_args_spacing:
-        args = re.split(r'(\s+)', msg)[2:]
+    cmd, *args = re.split(r"(\s+)", msg)
+    if args:
+        args = args[1:]
 
     match cmd[0]:
         case "@":
@@ -45,7 +38,6 @@ def build_command(data: Any) -> Command:
             "cmd": cmd,
             "args": args,
             "msg_type": msg_type,
-            "working_dir": working_dir,
         }
     )
 

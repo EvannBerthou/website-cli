@@ -8,6 +8,7 @@ class User(BaseModel):
     ws: WebSocket
     username: str
     portal: str | None = None
+    working_dir: str = '/'
 
     class Config:
         arbitrary_types_allowed = True
