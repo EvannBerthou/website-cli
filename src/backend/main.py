@@ -12,7 +12,7 @@ from fastapi.templating import Jinja2Templates
 from .deps import SessionDep
 from .commands import Commands
 from .models.user import user_exists, create_user, user_valid
-from .models.command import Command, build_command, MsgType
+from .models.command import Command, build_command
 from .connectionManager import ConnectionManager
 from .login import login_manager
 
@@ -64,23 +64,21 @@ async def login(request: Request, cmd: Annotated[str, Form()], db: SessionDep):
 @app.websocket("/ws/{token}")
 async def websocket_endpoint(websocket: WebSocket, token: str):
     user = await manager.verify_token(websocket, token)
-    assert websocket.client is not None
+    if not user or not websocket.client:
+        return
+
     client_id = websocket.client.host
     await manager.refresh_users()
     try:
-        motd = {"chat": f"Vous êtes connectés avec le user : {user}"}
+        motd = {"chat": f"Vous êtes connectés avec le user : {user.username}"}
         await manager.send_template(websocket, "chat.html", motd)
-        await manager.send_template(websocket, "cmd.html", {"working_dir": "/"})
+        await manager.send_template(
+            websocket, "cmd.html", {"working_dir": user.working_dir}
+        )
         while True:
             data = await websocket.receive_json()
             command = build_command(data)
-            match command.msg_type:
-                case MsgType.Global:
-                    await handle_global_msg(websocket, command.full)
-                case MsgType.Portal:
-                    await handle_portal_msg(websocket, command.full)
-                case MsgType.Command:
-                    await handle_command(websocket, command)
+            await handle_command(websocket, command)
     except WebSocketDisconnect:
         print(f"Disconnect: {client_id}")
         manager.disconnect(websocket)
@@ -89,33 +87,16 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         pass
 
 
-async def handle_global_msg(websocket: WebSocket, msg: str) -> None:
-    msg = msg[1:]
-    user = manager.get_user(websocket).username
-    context = {"user": user, "chat": msg, "prefix": "@"}
-    await manager.broadcast_template("chat.html", context)
-
-
-async def handle_portal_msg(websocket: WebSocket, msg: str) -> None:
-    user = manager.get_user(websocket)
-    msg = msg[1:]
-    if not user.portal:
-        ctx = {"chat": "Vous n'êtes dans aucun portail."}
-        await manager.send_template(websocket, "chat.html", ctx)
-    else:
-        context = {
-            "user": user.username,
-            "chat": msg,
-            "prefix": "#",
-            "suffix": f"({user.portal})",
-        }
-        await manager.send_template_portal("chat.html", user.portal, context)
-
-
 async def handle_command(websocket: WebSocket, command: Command) -> None:
     old_working_path = manager.get_user(websocket).working_dir
-    context = {"cmd": command.full, "old_working_dir": old_working_path}
-    await manager.send_template(websocket, "cmd_log.html", context)
+    await manager.send_template(
+        websocket,
+        "cmd_log.html",
+        {"cmd": command.full, "old_working_dir": old_working_path},
+    )
+
+    if not command.cmd:
+        return
 
     response = await commands.handle_cmd(websocket, command)
     if not response:

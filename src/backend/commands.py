@@ -155,3 +155,38 @@ async def msg(ws: WebSocket, args: Namespace) -> CommandResult:
         target_ws, "chat.html", {"prefix": "<- ", "user": sender, "chat": msg}
     )
     return CommandResult(f"-> {target_name} : {msg}")
+
+
+@command(
+    name="@",
+    description="Sends a global message",
+    params=[arg("message", type=str, nargs="+")],
+    help="@ <message>",
+)
+async def handle_global_msg(websocket: WebSocket, args: Namespace) -> None:
+    msg = "".join(args.message)
+    user = Commands.manager.get_user(websocket).username
+    context = {"user": user, "chat": msg, "prefix": "@"}
+    await Commands.manager.broadcast_template("chat.html", context)
+
+
+@command(
+    name="#",
+    description="Sends a message to the portal",
+    params=[arg("message", type=str, nargs="+")],
+    help="# <message>",
+)
+async def handle_portal_msg(websocket: WebSocket, args: Namespace) -> None:
+    user = Commands.manager.get_user(websocket)
+    msg = "".join(args.message)
+    if not user.portal:
+        ctx = {"chat": "Vous n'êtes dans aucun portail."}
+        await Commands.manager.send_template(websocket, "chat.html", ctx)
+    else:
+        context = {
+            "user": user.username,
+            "chat": msg,
+            "prefix": "#",
+            "suffix": f"({user.portal})",
+        }
+        await Commands.manager.send_template_portal("chat.html", user.portal, context)

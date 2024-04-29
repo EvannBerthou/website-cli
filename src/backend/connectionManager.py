@@ -10,21 +10,23 @@ class ConnectionManager:
     def __init__(self) -> None:
         self.active_connections: dict[WebSocket, User] = {}
 
-    async def verify_token(self, websocket: WebSocket, token: str):
+    async def verify_token(self, websocket: WebSocket, token: str) -> User | None:
         await websocket.accept()
         try:
             user_obj: User = await login_manager.get_current_user(token)
             user = str(user_obj.username)
-            await self.connect(websocket, user)
-            return user
+            return await self.connect(websocket, user)
         except HTTPException:
             motd = {"chat": "ERROR: InvalidCreds"}
             await self.send_template(websocket, "chat.html", motd)
             await self.send_template(websocket, "login.html", {})
             await websocket.close()
+            return None
 
     async def connect(self, websocket: WebSocket, user: str):
-        self.active_connections[websocket] = User(ws=websocket, username=user)
+        new_user = User(ws=websocket, username=user)
+        self.active_connections[websocket] = new_user
+        return new_user
 
     def disconnect(self, websocket: WebSocket):
         self.active_connections.pop(websocket, None)
@@ -32,8 +34,8 @@ class ConnectionManager:
     async def send_personal_message(self, message: str, websocket: WebSocket):
         try:
             await websocket.send_text(message)
-        except:
-            print('Error sending msg', file=stderr)
+        except RuntimeError:
+            print("Error sending msg", file=stderr)
 
     async def broadcast(self, message: str):
         for connection in self.active_connections:
