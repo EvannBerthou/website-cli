@@ -1,3 +1,4 @@
+from sys import stderr
 from fastapi import HTTPException, WebSocket
 
 from .user import User
@@ -29,7 +30,10 @@ class ConnectionManager:
         self.active_connections.pop(websocket, None)
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
+        try:
+            await websocket.send_text(message)
+        except:
+            print('Error sending msg', file=stderr)
 
     async def broadcast(self, message: str):
         for connection in self.active_connections:

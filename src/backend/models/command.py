@@ -28,9 +28,6 @@ def build_command(data: Any) -> Command:
     working_dir = data.get("working-dir", "")
     cmd, *args = msg.split()
 
-    if cmd in command_needing_working_dir:
-        args.append(working_dir)
-
     if cmd in command_keep_args_spacing:
         args = re.split(r'(\s+)', msg)[2:]
 

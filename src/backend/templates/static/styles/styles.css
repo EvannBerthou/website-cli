@@ -55,7 +55,7 @@ main #terminal #history #inner-history * {
 }
 
 main #terminal #history #inner-history .msg {
-    white-space: preserve-spaces;
+    white-space: preserve;
 }
 
 main #terminal #prompt {

@@ -1,102 +1,152 @@
-import inspect
+from argparse import Namespace, ArgumentError, ArgumentParser, HelpFormatter
 from typing import Optional, Callable
+from dataclasses import dataclass
 
 from fastapi import WebSocket
-from pydantic import ValidationError, validate_call, ConfigDict
 
 from .connectionManager import ConnectionManager
-from .models.command import Command, CommandResult
+from .models.command import CommandResult, Command
 
-pydantic_config = ConfigDict(arbitrary_types_allowed=True)
+
+class SmartFormatter(HelpFormatter):
+    def format_help(self):
+        help = self._root_section.format_help()
+        help = "\n".join([s for s in help.split("\n") if s])
+        if help:
+            help = self._long_break_matcher.sub("\n\n", help)
+            help = help.strip("\n") + "\n"
+        return help
+
+
+@dataclass
+class ServerCommand:
+    name: str
+    description: str
+    help: str
+    execute: Callable
+
+
+def arg(n, **kwargs):
+    return n, kwargs
+
+
+commands: dict[str, ServerCommand] = {}
+
+
+def command(*, name, description, help, params=None):
+    def decorator(function):
+        parser = ArgumentParser(
+            prog=name,
+            description=description,
+            formatter_class=SmartFormatter,
+            exit_on_error=False,
+        )
+        if params:
+            for param_name, d in params:
+                parser.add_argument(param_name, **d)
+
+        async def wrapper(ws, args):
+            parsed_args = parser.parse_args(args)
+            return await function(ws, parsed_args)
+
+        commands[name] = ServerCommand(name, description, help, wrapper)
+        return wrapper
+
+    return decorator
 
 
 class Commands:
+    manager: ConnectionManager
+
     def __init__(self, manager: ConnectionManager):
-        self.manager = manager
+        Commands.manager = manager
 
     async def handle_cmd(
         self, websocket: WebSocket, command: Command
     ) -> Optional[CommandResult]:
-        params = []
-        try:
-            cmd_fct: Callable = getattr(self, f"cmd_{command.cmd}")
-            params = await self.get_non_optional_params(cmd_fct)
-            if len(params) > len(command.args):
-                return await self.get_usage(command.cmd, params)
-            return await cmd_fct(websocket, *command.args)
-        except AttributeError:
+        if c := commands.get(command.cmd):
+            try:
+                return await c.execute(websocket, command.args)
+            # NOTE: except SystemExit because of a bug in argparse.
+            # Even with exit_on_error=False, if there is no args passed
+            # the lib throws a SystemExit which exits the program if not handled
+            except (ArgumentError, SystemExit):
+                return CommandResult(c.help)
+        else:
             return CommandResult(f"Unknown command : {command.cmd}")
-        except ValidationError:
-            return await self.get_usage(command.cmd, params)
 
-    async def get_non_optional_params(self, cmd_fct: Callable):
-        params = await self.get_method_params(cmd_fct)
-        return [param for param in params if param.default == inspect.Parameter.empty]
 
-    """
-    Commands
-    """
-
-    async def get_method_params(self, cmd_fct: Callable):
-        sig = inspect.signature(cmd_fct)
-        return list(sig.parameters.copy().values())[1:]
-
-    async def get_usage(self, cmd_name: str, params: list[inspect.Parameter]):
-        args_usage = " ".join([f"<{arg}>" for arg in params])
-        return CommandResult(f"Usage: {cmd_name} {args_usage}")
-
-    @validate_call(config=pydantic_config)
-    async def cmd_username(self, websocket: WebSocket, new_name: str) -> CommandResult:
-        await self.manager.set_username(websocket, new_name)
-        await self.manager.refresh_users()
-        return CommandResult(f"Username changed to {new_name}")
-
-    @validate_call(config=pydantic_config)
-    async def cmd_help(
-        self, _: WebSocket, cmd_name: Optional[str] = None
-    ) -> CommandResult:
-        if not cmd_name:
-            all_fct = inspect.getmembers(Commands, predicate=inspect.isfunction)
-            fct_names = ", ".join(x[0][4:] for x in all_fct if x[0].startswith("cmd_"))
-            return CommandResult(
-                f"Type `help <command name>` for more details.\n{fct_names}"
-            )
-
-        try:
-            cmd_fct = getattr(self, f"cmd_{cmd_name}")
-        except AttributeError:
-            return CommandResult(f"Unknown command : {cmd_name}")
-        params = await self.get_method_params(cmd_fct)
-        return await self.get_usage(cmd_name, params)
-
-    @validate_call(config=pydantic_config)
-    async def cmd_clear(self, _: WebSocket) -> None:
-        return None
-
-    @validate_call(config=pydantic_config)
-    async def cmd_portal(self, websocket: WebSocket, portal_name: str) -> CommandResult:
-        self.manager.active_connections[websocket].portal = portal_name
-        context = {"portals": [], "current": portal_name}
-        await self.manager.send_template(websocket, "portals.html", context)
-        await self.manager.refresh_users()  # TODO: Refresh portals
-        return CommandResult(f"Portal changed to {portal_name}")
-
-    @validate_call(config=pydantic_config)
-    async def cmd_cd(self, _: WebSocket, target_dir: str, wd: str) -> CommandResult:
-        new_dir = f"{wd}{target_dir}/"
-        return CommandResult(working_dir=new_dir)
-
-    @validate_call(config=pydantic_config)
-    async def cmd_msg(self, ws: WebSocket, *args) -> CommandResult:
-        target_name = args[0]
-        target_ws = self.manager.get_ws(target_name)
-        sender = self.manager.get_user(ws).username
-        if sender == target_name:
-            return CommandResult("Cannot send message to yourself")
-        if not target_ws:
-            return CommandResult(f"User {target_name} not found")
-        msg = "".join(args[2:])
-        await self.manager.send_template(
-            target_ws, "chat.html", {"prefix": "<- ", "user": sender, "chat": msg}
+@command(
+    name="help",
+    description="Gets command help page",
+    params=[
+        arg(
+            "command",
+            type=str,
+            nargs="?",
         )
-        return CommandResult(f"-> {target_name} : {msg}")
+    ],
+    help="help <command?>",
+)
+async def help(_: WebSocket, args: Namespace) -> CommandResult:
+    if cmd := args.command:
+        if c := commands.get(cmd, None):
+            return CommandResult(c.help)
+        else:
+            return CommandResult(f"Unknown command : {cmd}")
+
+    fct_names = ", ".join(commands.keys())
+    return CommandResult(f"Type `help <command name>` for more details.\n{fct_names}")
+
+
+@command(name="clear", description="Clears terminal", help="clear")
+async def clear(*_) -> None:
+    return None
+
+
+@command(
+    name="cd",
+    description="Changes current working directory",
+    params=[arg("directory", type=str, nargs=1)],
+    help="cd <target_dir>",
+)
+async def cd(_: WebSocket, args: Namespace) -> CommandResult:
+    target_dir = args.directory[0]
+    return CommandResult(working_dir=target_dir)
+
+
+@command(
+    name="portal",
+    description="Changes current portal",
+    params=[arg("portal", type=str, nargs=1)],
+    help="portal <portal>",
+)
+async def portal(websocket: WebSocket, args: Namespace) -> CommandResult:
+    portal_name = args.portal[0]
+    Commands.manager.active_connections[websocket].portal = portal_name
+    # TODO: Refresh portals
+    context = {"portals": [], "current": portal_name}
+    await Commands.manager.send_template(websocket, "portals.html", context)
+    await Commands.manager.refresh_users()
+    return CommandResult(f"Portal changed to {portal_name}")
+
+
+@command(
+    name="msg",
+    description="Changes current portal",
+    params=[arg("target", type=str, nargs=1), arg("message", type=str, nargs="+")],
+    help="msg <target> <message>",
+)
+async def msg(ws: WebSocket, args: Namespace) -> CommandResult:
+    msg = "".join(args.message)
+    target_name = args.target[0]
+    target_ws = Commands.manager.get_ws(target_name)
+    sender = Commands.manager.get_user(ws).username
+    if sender == target_name:
+        return CommandResult("Cannot send message to yourself")
+    if not target_ws:
+        return CommandResult(f"User {target_name} not found")
+    await Commands.manager.send_template(
+        target_ws, "chat.html", {"prefix": "<- ", "user": sender, "chat": msg}
+    )
+    return CommandResult(f"-> {target_name} : {msg}")
