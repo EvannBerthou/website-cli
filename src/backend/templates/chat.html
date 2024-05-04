@@ -5,10 +5,10 @@
       {% if user -%} {{ user }} {% endif -%}
       {% if suffix -%} {{ suffix }} {% endif -%}
       {% if user -%} : {% endif -%}
-      {{lines[0]}}</p>
+      {{lines[0] | urlize(nofollow=True, target='_blank') }}</p>
 
     {% for line in lines[1:] -%}
-    <p>{{ line }}</p>
+    <p>{{lines[0] | urlize(nofollow=True, target='_blank') }}</p>
     {% endfor -%}
   </div>
 </div>

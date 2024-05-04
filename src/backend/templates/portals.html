@@ -1,5 +1,9 @@
 <div id="portals" class="scrollable" hx-swap-oob="outerHTML:#portals">
-  <h1>Portals ({{ current }})</h1>
+  {% if current %}
+    <h1>Portals ({{ current }})</h1>
+  {% else %}
+    <h1>In no portal </h1>
+  {% endif %}
   <ul>
     {% for portal in portals %}
       <li>{{ portal }}</li>

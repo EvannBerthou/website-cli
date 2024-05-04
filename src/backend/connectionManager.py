@@ -74,3 +74,11 @@ class ConnectionManager:
             if user.username == username:
                 return user.ws
         return None
+
+    def get_portals(self) -> list[str]:
+        portals = {}
+        for user in self.active_connections.values():
+            if user.portal:
+                portals[user.portal] = 1 + portals.get(user.portal, 0)
+
+        return [f"{k} ({v})" for k, v in portals.items()]

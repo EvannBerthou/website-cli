@@ -75,6 +75,9 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         await manager.send_template(
             websocket, "cmd.html", {"working_dir": user.working_dir}
         )
+        portals = Commands.manager.get_portals()
+        context = {"portals": portals}
+        await Commands.manager.send_template(websocket, "portals.html", context)
         while True:
             data = await websocket.receive_json()
             command = build_command(data)

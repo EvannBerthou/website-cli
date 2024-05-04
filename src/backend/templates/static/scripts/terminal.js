@@ -1,6 +1,6 @@
 const loadingTexts = [
-    {text: "Faire '@message' pour envoyer un message global", timing: 0},
-    {text: "Faire '#message' pour envoyer un message dans le portal", timing: 0},
+    {text: "Faire '@ message' pour envoyer un message global", timing: 0},
+    {text: "Faire '# message' pour envoyer un message dans le portal", timing: 0},
 ]
 
 const commandHistory = []

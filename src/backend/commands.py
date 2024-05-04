@@ -129,8 +129,8 @@ async def cd(ws: WebSocket, args: Namespace) -> CommandResult:
 async def portal(websocket: WebSocket, args: Namespace) -> CommandResult:
     portal_name = args.portal[0]
     Commands.manager.active_connections[websocket].portal = portal_name
-    # TODO: Refresh portals
-    context = {"portals": [], "current": portal_name}
+    portals = Commands.manager.get_portals()
+    context = {"portals": portals, "current": portal_name}
     await Commands.manager.send_template(websocket, "portals.html", context)
     await Commands.manager.refresh_users()
     return CommandResult(f"Portal changed to {portal_name}")
