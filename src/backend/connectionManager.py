@@ -75,10 +75,9 @@ class ConnectionManager:
                 return user.ws
         return None
 
-    def get_portals(self) -> list[str]:
-        portals = {}
+    def get_portals(self) -> dict[str, int]:
+        portals: dict[str, int] = {}
         for user in self.active_connections.values():
             if user.portal:
                 portals[user.portal] = 1 + portals.get(user.portal, 0)
-
-        return [f"{k} ({v})" for k, v in portals.items()]
+        return portals

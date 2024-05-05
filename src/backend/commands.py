@@ -1,12 +1,15 @@
 import os
-from argparse import Namespace, ArgumentError, ArgumentParser, HelpFormatter
+from argparse import Namespace, ArgumentError, ArgumentParser, HelpFormatter, SUPPRESS
 from typing import Optional, Callable
 from dataclasses import dataclass
 
 from fastapi import WebSocket
 
+
 from .connectionManager import ConnectionManager
 from .models.command import CommandResult, Command
+from .models.portal import get_portals, create_portal
+from .models.user import get_user
 
 
 class SmartFormatter(HelpFormatter):
@@ -27,8 +30,8 @@ class ServerCommand:
     execute: Callable
 
 
-def arg(n, **kwargs):
-    return n, kwargs
+def arg(*n, **kwargs):
+    return *n, kwargs
 
 
 commands: dict[str, ServerCommand] = {}
@@ -41,10 +44,11 @@ def command(*, name, description, help, params=None):
             description=description,
             formatter_class=SmartFormatter,
             exit_on_error=False,
+            argument_default=SUPPRESS,
         )
         if params:
-            for param_name, d in params:
-                parser.add_argument(param_name, **d)
+            for *param_name, d in params:
+                parser.add_argument(*param_name, **d)
 
         async def wrapper(ws, args):
             parsed_args = parser.parse_args(args)
@@ -123,17 +127,48 @@ async def cd(ws: WebSocket, args: Namespace) -> CommandResult:
 @command(
     name="portal",
     description="Changes current portal",
-    params=[arg("portal", type=str, nargs=1)],
-    help="portal <portal>",
+    params=[
+        arg("-c", "--create", action="store_true"),
+        arg("portal", type=str, nargs=1),
+    ],
+    help="portal [-c --create] <portal>",
 )
 async def portal(websocket: WebSocket, args: Namespace) -> CommandResult:
     portal_name = args.portal[0]
+    if "create" in args:
+        return await create_new_portal(websocket, portal_name)
+
+    portals = get_portals()
+    if portal_name not in portals:
+        return CommandResult(f"Portal '{portal_name}' does not exist.")
+
     Commands.manager.active_connections[websocket].portal = portal_name
-    portals = Commands.manager.get_portals()
-    context = {"portals": portals, "current": portal_name}
+    await refresh_portals(websocket, portals, portal_name)
+    return CommandResult(f"Portal changed to '{portal_name}'.")
+
+
+async def create_new_portal(ws: WebSocket, portal_name: str) -> CommandResult:
+    portals = get_portals()
+    username = Commands.manager.get_user(ws).username
+    user = get_user(username)
+    if not user or not user.id:
+        return CommandResult(f"Invalid user {username}")
+
+    if not create_portal(portal_name, user.id):
+        return CommandResult(f"Portal {portal_name} already exists.")
+
+    await refresh_portals(ws, portals, portal_name)
+    return CommandResult(f"New portal '{portal_name}' created.")
+
+
+async def refresh_portals(
+    websocket: WebSocket, portals: list[str], current: str
+) -> None:
+    portals = get_portals()
+    portals_count = Commands.manager.get_portals()
+    context = {"portals": portals, "count": portals_count, "current": current}
     await Commands.manager.send_template(websocket, "portals.html", context)
     await Commands.manager.refresh_users()
-    return CommandResult(f"Portal changed to {portal_name}")
 
 
 @command(

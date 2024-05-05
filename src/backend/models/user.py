@@ -14,10 +14,12 @@ class User(SQLModel, table=True):
 
 
 @login_manager.user_loader()
-def get_user(username: str) -> User | None:
+def _get_user(username: str) -> User | None:
     with Session(engine) as session:
         return get_user_by_username(session, username)
 
+def get_user(username: str) -> User | None:
+    return _get_user(username) # type: ignore
 
 def get_user_by_username(db: Session, username: str) -> User | None:
     stmt = select(User).where(User.username == username)

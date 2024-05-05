@@ -9,12 +9,16 @@ class Command(BaseModel):
     cmd: str
     args: list[str] = []
 
+cmd_keep_spacing = ['@', '#']
 
-def build_command(data: Any) -> Command:
-    msg = data.get("cmd", "")
-    cmd, *args = re.split(r"(\s+)", msg)
-    if args:
-        args = args[1:]
+def build_command(msg: Any) -> Command:
+    cmd = msg.split()[0]
+    if cmd in cmd_keep_spacing:
+        _, *args = re.split(r"(\s+)", msg)
+        if args:
+            args = args[1:]
+    else:
+        _, *args = msg.split()
 
     return Command.model_validate(
         {

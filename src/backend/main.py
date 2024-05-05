@@ -12,6 +12,7 @@ from fastapi.templating import Jinja2Templates
 from .deps import SessionDep
 from .commands import Commands
 from .models.user import user_exists, create_user, user_valid
+from .models.portal import get_portals
 from .models.command import Command, build_command
 from .connectionManager import ConnectionManager
 from .login import login_manager
@@ -75,12 +76,15 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         await manager.send_template(
             websocket, "cmd.html", {"working_dir": user.working_dir}
         )
-        portals = Commands.manager.get_portals()
-        context = {"portals": portals}
+        portals = get_portals()
+        portals_count = Commands.manager.get_portals()
+        context = {"portals": portals, "count": portals_count}
         await Commands.manager.send_template(websocket, "portals.html", context)
         while True:
             data = await websocket.receive_json()
-            command = build_command(data)
+            if not (msg := data.get("cmd", "")):
+                continue
+            command = build_command(msg)
             await handle_command(websocket, command)
     except WebSocketDisconnect:
         print(f"Disconnect: {client_id}")

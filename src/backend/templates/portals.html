@@ -1,12 +1,12 @@
 <div id="portals" class="scrollable" hx-swap-oob="outerHTML:#portals">
-  {% if current %}
+    {% if current %}
     <h1>Portals ({{ current }})</h1>
-  {% else %}
+    {% else %}
     <h1>In no portal </h1>
-  {% endif %}
-  <ul>
-    {% for portal in portals %}
-      <li>{{ portal }}</li>
-    {% endfor %}
-  </ul>
+    {% endif %}
+    <ul>
+        {% for portal in portals %}
+        <li>{{ portal }} ({{ count.get(portal, 0)}})</li>
+        {% endfor %}
+    </ul>
 </div>
