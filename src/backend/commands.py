@@ -136,7 +136,8 @@ async def cd(ws: WebSocket, args: Namespace) -> CommandResult:
 async def portal(websocket: WebSocket, args: Namespace) -> CommandResult:
     portal_name = args.portal[0]
     if "create" in args:
-        return await create_new_portal(websocket, portal_name)
+        if err := await create_new_portal(websocket, portal_name):
+            return err
 
     portals = get_portals()
     if portal_name not in portals:
@@ -147,8 +148,7 @@ async def portal(websocket: WebSocket, args: Namespace) -> CommandResult:
     return CommandResult(f"Portal changed to '{portal_name}'.")
 
 
-async def create_new_portal(ws: WebSocket, portal_name: str) -> CommandResult:
-    portals = get_portals()
+async def create_new_portal(ws: WebSocket, portal_name: str) -> CommandResult | None:
     username = Commands.manager.get_user(ws).username
     user = get_user(username)
     if not user or not user.id:
@@ -156,9 +156,6 @@ async def create_new_portal(ws: WebSocket, portal_name: str) -> CommandResult:
 
     if not create_portal(portal_name, user.id):
         return CommandResult(f"Portal {portal_name} already exists.")
-
-    await refresh_portals(ws, portals, portal_name)
-    return CommandResult(f"New portal '{portal_name}' created.")
 
 
 async def refresh_portals(
